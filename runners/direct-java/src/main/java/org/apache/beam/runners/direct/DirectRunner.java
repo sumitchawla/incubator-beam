@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import javax.annotation.Nullable;
 import org.apache.beam.runners.direct.DirectGroupByKey.DirectGroupByKeyOnly;
 import org.apache.beam.runners.direct.DirectRunner.DirectPipelineResult;
 import org.apache.beam.runners.direct.TestStreamEvaluatorFactory.DirectTestStreamFactory;
@@ -38,6 +39,7 @@ import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.Pipeline.PipelineExecutionException;
 import org.apache.beam.sdk.PipelineResult;
 import org.apache.beam.sdk.annotations.Experimental;
+import org.apache.beam.sdk.io.Read;
 import org.apache.beam.sdk.io.Write;
 import org.apache.beam.sdk.options.PipelineOptions;
 import org.apache.beam.sdk.runners.PipelineRunner;
@@ -90,12 +92,12 @@ public class DirectRunner
    *
    * @param <T> the type of elements that can be added to this bundle
    */
-  public static interface UncommittedBundle<T> {
+  interface UncommittedBundle<T> {
     /**
      * Returns the PCollection that the elements of this {@link UncommittedBundle} belong to.
      */
+    @Nullable
     PCollection<T> getPCollection();
-
 
     /**
      * Outputs an element to this bundle.
@@ -122,10 +124,11 @@ public class DirectRunner
    * a part of at a later point.
    * @param <T> the type of elements contained within this bundle
    */
-  public static interface CommittedBundle<T> {
+  interface CommittedBundle<T> {
     /**
      * Returns the PCollection that the elements of this bundle belong to.
      */
+    @Nullable
     PCollection<T> getPCollection();
 
     /**
@@ -282,21 +285,32 @@ public class DirectRunner
     Collection<ModelEnforcementFactory> parDoEnforcements = createParDoEnforcements(options);
     enforcements.put(ParDo.Bound.class, parDoEnforcements);
     enforcements.put(ParDo.BoundMulti.class, parDoEnforcements);
+    if (options.isEnforceEncodability()) {
+      enforcements.put(
+          Read.Unbounded.class,
+          ImmutableSet.<ModelEnforcementFactory>of(EncodabilityEnforcementFactory.create()));
+      enforcements.put(
+          Read.Bounded.class,
+          ImmutableSet.<ModelEnforcementFactory>of(EncodabilityEnforcementFactory.create()));
+    }
     return enforcements.build();
   }
 
   private Collection<ModelEnforcementFactory> createParDoEnforcements(
       DirectOptions options) {
     ImmutableList.Builder<ModelEnforcementFactory> enforcements = ImmutableList.builder();
-    if (options.isTestImmutability()) {
+    if (options.isEnforceImmutability()) {
       enforcements.add(ImmutabilityEnforcementFactory.create());
+    }
+    if (options.isEnforceEncodability()) {
+      enforcements.add(EncodabilityEnforcementFactory.create());
     }
     return enforcements.build();
   }
 
   private BundleFactory createBundleFactory(DirectOptions pipelineOptions) {
     BundleFactory bundleFactory = ImmutableListBundleFactory.create();
-    if (pipelineOptions.isTestImmutability()) {
+    if (pipelineOptions.isEnforceImmutability()) {
       bundleFactory = ImmutabilityCheckingBundleFactory.create(bundleFactory);
     }
     return bundleFactory;

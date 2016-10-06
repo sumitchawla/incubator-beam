@@ -53,6 +53,11 @@ page at http://checkstyle.sourceforge.net/config.html -->
     <property name="severity" value="error"/>
   </module>
 
+  <!-- Prevent *Tests.java as tools may not pick them up -->
+  <module name="RegexpOnFilename">
+    <property name="fileNamePattern" value=".*Tests\.java$" />
+  </module>
+
   <!-- Allow use of comment to suppress javadocstyle -->
   <module name="SuppressionCommentFilter">
     <property name="offCommentFormat" value="CHECKSTYLE.OFF\: ([\w\|]+)"/>
@@ -112,6 +117,14 @@ page at http://checkstyle.sourceforge.net/config.html -->
     -->
     <module name="RegexpSinglelineJava">
       <property name="format" value="com\.google\.api\.client\.util\.(ByteStreams|Charsets|Collections2|Joiner|Lists|Maps|Objects|Preconditions|Sets|Strings|Throwables)"/>
+    </module>
+
+    <!--
+         Require static importing from Preconditions.
+    -->
+    <module name="RegexpSinglelineJava">
+      <property name="format" value="^import com.google.common.base.Preconditions;$"/>
+      <property name="message" value="Static import functions from Guava Preconditions"/>
     </module>
 
     <module name="UnusedImports">

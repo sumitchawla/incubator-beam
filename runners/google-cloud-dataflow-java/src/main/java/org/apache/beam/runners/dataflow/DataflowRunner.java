@@ -132,6 +132,7 @@ import org.apache.beam.sdk.transforms.SerializableFunction;
 import org.apache.beam.sdk.transforms.View;
 import org.apache.beam.sdk.transforms.View.CreatePCollectionView;
 import org.apache.beam.sdk.transforms.WithKeys;
+import org.apache.beam.sdk.transforms.display.DisplayData;
 import org.apache.beam.sdk.transforms.windowing.BoundedWindow;
 import org.apache.beam.sdk.transforms.windowing.GlobalWindow;
 import org.apache.beam.sdk.transforms.windowing.GlobalWindows;
@@ -206,9 +207,9 @@ public class DataflowRunner extends PipelineRunner<DataflowPipelineJob> {
   // Default Docker container images that execute Dataflow worker harness, residing in Google
   // Container Registry, separately for Batch and Streaming.
   public static final String BATCH_WORKER_HARNESS_CONTAINER_IMAGE =
-      "dataflow.gcr.io/v1beta3/beam-java-batch:beam-master-20160826";
+      "dataflow.gcr.io/v1beta3/beam-java-batch:beam-master-20160926";
   public static final String STREAMING_WORKER_HARNESS_CONTAINER_IMAGE =
-      "dataflow.gcr.io/v1beta3/beam-java-streaming:beam-master-20160826";
+      "dataflow.gcr.io/v1beta3/beam-java-streaming:beam-master-20160926";
 
   // The limit of CreateJob request size.
   private static final int CREATE_JOB_REQUEST_LIMIT_BYTES = 10 * 1024 * 1024;
@@ -2256,6 +2257,13 @@ public class DataflowRunner extends PipelineRunner<DataflowPipelineJob> {
       @Override
       protected Coder<ValueWithRecordId<T>> getDefaultOutputCoder() {
         return ValueWithRecordId.ValueWithRecordIdCoder.of(source.getDefaultOutputCoder());
+      }
+
+      @Override
+      public void populateDisplayData(DisplayData.Builder builder) {
+        super.populateDisplayData(builder);
+        builder.add(DisplayData.item("source", source.getClass()));
+        builder.include(source);
       }
 
       public UnboundedSource<T, ?> getSource() {

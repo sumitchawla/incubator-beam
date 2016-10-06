@@ -422,9 +422,8 @@ final class ExecutorServiceParallelExecutor implements PipelineExecutor {
               @SuppressWarnings({"unchecked", "rawtypes"})
               CommittedBundle<?> bundle =
                   evaluationContext
-                      .createKeyedBundle(
-                          null, keyTimers.getKey(), (PCollection) transform.getInput())
-                      .add(WindowedValue.valueInEmptyWindows(work))
+                      .createKeyedBundle(keyTimers.getKey(), (PCollection) transform.getInput())
+                      .add(WindowedValue.valueInGlobalWindow(work))
                       .commit(evaluationContext.now());
               scheduleConsumption(transform, bundle, new TimerIterableCompletionCallback(delivery));
               state.set(ExecutorState.ACTIVE);
